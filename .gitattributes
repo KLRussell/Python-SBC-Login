@@ -16,8 +16,7 @@ class SBCBot:
 	name = "SBCBot"
 	root = "https://osstoolbar.att.com/toolbar/index.html"
 
-	def __init__(self, username, password, driver=webdriver.Ie()):
-		self.driver = driver
+	def __init__(self, username, password):
 		self.username = username
 		self.password = password
 		self.EnumWindows = windll.user32.EnumWindows
@@ -27,6 +26,7 @@ class SBCBot:
 		self.IsWindowVisible = windll.user32.IsWindowVisible
 
 	def login(self):
+		self.driver = webdriver.Ie()
 		print("[...] Logging in...")
 
 		try:
@@ -37,7 +37,7 @@ class SBCBot:
 			)
 
 			print('\t[+] Launching SBC Toolbar.')
-			
+
 			ToolbarButton = WebDriverWait(self.driver, 300).until(
 				EC.visibility_of_element_located((By.XPATH, "//a[@href='toolbarLaunch.html']/."))
 			)
@@ -61,18 +61,17 @@ class SBCBot:
 				EC.visibility_of_element_located((By.XPATH, "//object[@name='Toolbar']"))
 			)
 
-			current = self.driver.current_window_handle
-			handles = self.driver.window_handles
-
 			sleep(1)
+			print('\t[+] Inputting credentials into SBC GUI menu.')
 
 			pyautogui.typewrite(self.username)
 			pyautogui.press('tab')
 			pyautogui.typewrite(self.password)
 			pyautogui.press('tab')
 			pyautogui.press('space')
+
 		except exceptions.ElementNotVisibleException as e:
-			print('\t[-] {} Setup unsuccessful.'.format(e))
+			print('\t[-] {} Login unsuccessful.'.format(e))
 
 	def FindWindow_Wait(self, item, secs):
 		i = 0
@@ -89,6 +88,12 @@ class SBCBot:
 			if title[1] == item:
 				return title
 
+	def FindWindowMatch(self, item):
+		self.GetWindows()
+		for title in self.titles:
+			if item in title[1]:
+				return title
+
 	def GetWindows(self):
 		self.EnumWindows(self.EnumWindowsProc(self.foreach_window), 0)
 
@@ -100,7 +105,13 @@ class SBCBot:
 			self.titles.append((hwnd, buff.value))
 		return True
 
+	def MaxWindow(self, hwnd):
+		windll.user32.SetForegroundWindow(hwnd)
+		windll.user32.SetFocus(hwnd)
+		windll.user32.ShowWindow(hwnd, 3)
+
 	def PosWindow(self, hwnd):
+		print('[...] Positioning SBC flash menu for interaction.')
 		win_rect = wintypes.RECT()
 		windll.user32.SetForegroundWindow(hwnd)
 		windll.user32.SetFocus(hwnd)
@@ -108,15 +119,46 @@ class SBCBot:
 		windll.user32.GetWindowRect(hwnd, ctypes.pointer(win_rect))
 		windll.user32.MoveWindow(hwnd, 0, 0, win_rect.right - win_rect.left, win_rect.bottom - win_rect.top, True)
 
+	def KillWindow(self, hwnd):
+		windll.user32.SetForegroundWindow(hwnd)
+		windll.user32.SetFocus(hwnd)
+		windll.user32.ShowWindow(hwnd, 1)
+		pyautogui.hotkey('ctrl','w')
+
 	def ClickGUI(self):
+		print('\t[+] Selecting Verification Gateway.')
 		pyautogui.moveTo(87,133)
 		pyautogui.click()
 
 if __name__ == '__main__':
 	bot = SBCBot(settings.UNAME, settings.PASS)
-	bot.login()
-	title = bot.FindWindow_Wait("Toolbar", 20)
+	title = bot.FindWindow("Toolbar")
+
 	if title:
+		print("[...] Toolbar is already launched. Checking if Verigate is opened")
+
+		title2 = bot.FindWindowMatch("Enhanced Verigate!")
+
+		if title2:
+			print("\t[+] Verigate is already launched. Destroying Verigate Window")
+			bot.KillWindow(title2[0])
+	else:
+		bot.login()
+		title = bot.FindWindow_Wait("Toolbar", 20)
+
+	if title:
+		print('\t[+] Login is successful.')
+
 		bot.PosWindow(title[0])
+
 		sleep(1)
+
 		bot.ClickGUI()
+		title3 = bot.FindWindow_Wait("Welcome to Enhanced Verigate! - Internet Explorer", 20)
+		if title3:
+			print('\t[+] Enhanced Verigate is launched. Maximizing window.')
+			bot.MaxWindow(title3[0])
+		else:
+			print('\t[-] Selecting Verification Gateway was unsuccessful')
+	else:
+		print('\t[+] Login was unsuccessful. Flash menu didn''t pop up.')
