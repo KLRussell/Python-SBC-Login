@@ -9,7 +9,7 @@ from time import sleep
 from ctypes import windll
 from ctypes import wintypes
 
-import ctypes, pyautogui, pywinauto, settings
+import ctypes, pyautogui, settings
 
 class SBCBot:
 	titles = []
@@ -19,6 +19,9 @@ class SBCBot:
 	def __init__(self, username, password):
 		self.username = username
 		self.password = password
+		self.enum()
+
+	def enum(self):
 		self.EnumWindows = windll.user32.EnumWindows
 		self.EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 		self.GetWindowText = windll.user32.GetWindowTextW
@@ -73,6 +76,14 @@ class SBCBot:
 		except exceptions.ElementNotVisibleException as e:
 			print('\t[-] {} Login unsuccessful.'.format(e))
 
+	def Verigate_Setup(self):
+		try:
+			#self.driver.switch_to().window("Welcome to Enhanced Verigate! - Internet Explorer")
+			#print(self.driver.title)
+
+		except exceptions.ElementNotVisibleException as e:
+			#print('\t[-] {} Login unsuccessful.'.format(e))
+
 	def FindWindow_Wait(self, item, secs):
 		i = 0
 		title = self.FindWindow(item)
@@ -95,6 +106,7 @@ class SBCBot:
 				return title
 
 	def GetWindows(self):
+		self.titles = []
 		self.EnumWindows(self.EnumWindowsProc(self.foreach_window), 0)
 
 	def foreach_window(self, hwnd, lParam):
@@ -111,7 +123,6 @@ class SBCBot:
 		windll.user32.ShowWindow(hwnd, 3)
 
 	def PosWindow(self, hwnd):
-		print('[...] Positioning SBC flash menu for interaction.')
 		win_rect = wintypes.RECT()
 		windll.user32.SetForegroundWindow(hwnd)
 		windll.user32.SetFocus(hwnd)
@@ -125,9 +136,12 @@ class SBCBot:
 		windll.user32.ShowWindow(hwnd, 1)
 		pyautogui.hotkey('ctrl','w')
 
-	def ClickGUI(self):
-		print('\t[+] Selecting Verification Gateway.')
-		pyautogui.moveTo(87,133)
+	def KillWindow2(self, hwnd):
+		self.PosWindow(hwnd)
+		self.ClickGUI(400, 14)
+
+	def ClickGUI(self, x, y):
+		pyautogui.moveTo(x, y)
 		pyautogui.click()
 
 if __name__ == '__main__':
@@ -142,22 +156,41 @@ if __name__ == '__main__':
 		if title2:
 			print("\t[+] Verigate is already launched. Destroying Verigate Window")
 			bot.KillWindow(title2[0])
+			sleep(1)
 	else:
+		title2 = bot.FindWindowMatch("EHOSS PRODUCTION")
+
+		if title2:
+			print("[...] EHOSS PRODUCTION exists. Destroying Window")
+			bot.KillWindow2(title2[0])
+			sleep(1)
+
+		title2 = bot.FindWindowMatch("AT&T Web Toolbar")
+
+		if title2:
+			print("\t[+] AT&T Web Toolbar exists. Destroying Window")
+			bot.KillWindow(title2[0])
+			sleep(1)
+
 		bot.login()
 		title = bot.FindWindow_Wait("Toolbar", 20)
 
 	if title:
 		print('\t[+] Login is successful.')
+		print('[...] Positioning SBC flash menu for interaction.')
 
 		bot.PosWindow(title[0])
 
 		sleep(1)
 
-		bot.ClickGUI()
-		title3 = bot.FindWindow_Wait("Welcome to Enhanced Verigate! - Internet Explorer", 20)
-		if title3:
+		print('\t[+] Selecting Verification Gateway.')
+		bot.ClickGUI(87, 133)
+		title = bot.FindWindow_Wait("Welcome to Enhanced Verigate! - Internet Explorer", 20)
+		if title:
 			print('\t[+] Enhanced Verigate is launched. Maximizing window.')
-			bot.MaxWindow(title3[0])
+
+			bot.MaxWindow(title[0])
+			bot.Verigate_Setup()
 		else:
 			print('\t[-] Selecting Verification Gateway was unsuccessful')
 	else:
