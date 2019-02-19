@@ -76,14 +76,6 @@ class SBCBot:
 		except exceptions.ElementNotVisibleException as e:
 			print('\t[-] {} Login unsuccessful.'.format(e))
 
-	def Verigate_Setup(self):
-		try:
-			#self.driver.switch_to().window("Welcome to Enhanced Verigate! - Internet Explorer")
-			#print(self.driver.title)
-
-		except exceptions.ElementNotVisibleException as e:
-			#print('\t[-] {} Login unsuccessful.'.format(e))
-
 	def FindWindow_Wait(self, item, secs):
 		i = 0
 		title = self.FindWindow(item)
@@ -190,7 +182,6 @@ if __name__ == '__main__':
 			print('\t[+] Enhanced Verigate is launched. Maximizing window.')
 
 			bot.MaxWindow(title[0])
-			bot.Verigate_Setup()
 		else:
 			print('\t[-] Selecting Verification Gateway was unsuccessful')
 	else:
